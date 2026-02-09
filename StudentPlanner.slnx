@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="StudentPlanner.Core/StudentPlanner.Core.csproj" />
+  <Project Path="StudentPlanner.Data/StudentPlanner.Data.csproj" />
+  <Project Path="StudentPlanner.UI/StudentPlanner.UI.csproj" />
+</Solution>
