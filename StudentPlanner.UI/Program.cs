@@ -1,3 +1,8 @@
+using System;
+using System.Windows.Forms;
+using StudentPlanner.Core;
+using StudentPlanner.Data;
+
 namespace StudentPlanner.UI
 {
     internal static class Program
@@ -11,7 +16,12 @@ namespace StudentPlanner.UI
             // To customize application configuration such as set high DPI settings or default font,
             // see https://aka.ms/applicationconfiguration.
             ApplicationConfiguration.Initialize();
-            Application.Run(new Form1());
+
+			// Create DB file and later create tables
+			DatabaseInitializer.Initialize();
+
+			ICourseRepository courseRepo = new CourseRepository();
+			Application.Run(new Form1());
         }
     }
 }

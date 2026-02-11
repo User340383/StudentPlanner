@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\StudentPlanner.Core\StudentPlanner.Core.csproj" />
+    <ProjectReference Include="..\StudentPlanner.Data\StudentPlanner.Data.csproj" />
   </ItemGroup>
 
 </Project>

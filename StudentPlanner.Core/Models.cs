@@ -1,4 +1,7 @@
-﻿namespace StudentPlanner.Core
+﻿using System;
+using System.Collections.Generic;
+
+namespace StudentPlanner.Core
 {
 	public class Course
 	{
