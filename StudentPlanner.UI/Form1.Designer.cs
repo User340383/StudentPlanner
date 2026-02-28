@@ -30,13 +30,15 @@
 		{
 			tabControl1 = new TabControl();
 			tabPageCourses = new TabPage();
+			tableLayoutPanel1 = new TableLayoutPanel();
+			dgvCourses = new DataGridView();
 			pnlCoursesTop = new Panel();
 			txtCourseName = new TextBox();
 			btnAddCourse = new Button();
 			btnDeleteCourse = new Button();
 			btnEditCourse = new Button();
-			dgvCourses = new DataGridView();
 			tabPageTasks = new TabPage();
+			tableLayoutPanel2 = new TableLayoutPanel();
 			pnlTasksTop = new Panel();
 			btnAddTask = new Button();
 			btnDeleteTask = new Button();
@@ -58,13 +60,13 @@
 			btnRegenerateSchedule = new Button();
 			lstWarnings = new ListBox();
 			dgvSchedule = new DataGridView();
-			tableLayoutPanel1 = new TableLayoutPanel();
-			tableLayoutPanel2 = new TableLayoutPanel();
 			tabControl1.SuspendLayout();
 			tabPageCourses.SuspendLayout();
-			pnlCoursesTop.SuspendLayout();
+			tableLayoutPanel1.SuspendLayout();
 			((System.ComponentModel.ISupportInitialize)dgvCourses).BeginInit();
+			pnlCoursesTop.SuspendLayout();
 			tabPageTasks.SuspendLayout();
+			tableLayoutPanel2.SuspendLayout();
 			pnlTasksTop.SuspendLayout();
 			((System.ComponentModel.ISupportInitialize)dgvTasks).BeginInit();
 			tabPageAvailability.SuspendLayout();
@@ -76,8 +78,6 @@
 			tlpSchedule.SuspendLayout();
 			pnlScheduleTop.SuspendLayout();
 			((System.ComponentModel.ISupportInitialize)dgvSchedule).BeginInit();
-			tableLayoutPanel1.SuspendLayout();
-			tableLayoutPanel2.SuspendLayout();
 			SuspendLayout();
 			// 
 			// tabControl1
@@ -92,6 +92,7 @@
 			tabControl1.SelectedIndex = 0;
 			tabControl1.Size = new Size(800, 450);
 			tabControl1.TabIndex = 0;
+			tabControl1.SelectedIndexChanged += tabControl1_SelectedIndexChanged;
 			// 
 			// tabPageCourses
 			// 
@@ -103,6 +104,31 @@
 			tabPageCourses.TabIndex = 0;
 			tabPageCourses.Text = "Courses";
 			tabPageCourses.UseVisualStyleBackColor = true;
+			// 
+			// tableLayoutPanel1
+			// 
+			tableLayoutPanel1.ColumnCount = 1;
+			tableLayoutPanel1.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+			tableLayoutPanel1.Controls.Add(dgvCourses, 0, 1);
+			tableLayoutPanel1.Controls.Add(pnlCoursesTop, 0, 0);
+			tableLayoutPanel1.Dock = DockStyle.Fill;
+			tableLayoutPanel1.Location = new Point(3, 3);
+			tableLayoutPanel1.Name = "tableLayoutPanel1";
+			tableLayoutPanel1.RowCount = 2;
+			tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Absolute, 55F));
+			tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+			tableLayoutPanel1.Size = new Size(786, 411);
+			tableLayoutPanel1.TabIndex = 5;
+			// 
+			// dgvCourses
+			// 
+			dgvCourses.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+			dgvCourses.Dock = DockStyle.Fill;
+			dgvCourses.Location = new Point(3, 58);
+			dgvCourses.Name = "dgvCourses";
+			dgvCourses.RowHeadersWidth = 51;
+			dgvCourses.Size = new Size(780, 350);
+			dgvCourses.TabIndex = 0;
 			// 
 			// pnlCoursesTop
 			// 
@@ -157,16 +183,6 @@
 			btnEditCourse.UseVisualStyleBackColor = true;
 			btnEditCourse.Click += btnEditCourse_Click;
 			// 
-			// dgvCourses
-			// 
-			dgvCourses.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-			dgvCourses.Dock = DockStyle.Fill;
-			dgvCourses.Location = new Point(3, 58);
-			dgvCourses.Name = "dgvCourses";
-			dgvCourses.RowHeadersWidth = 51;
-			dgvCourses.Size = new Size(780, 350);
-			dgvCourses.TabIndex = 0;
-			// 
 			// tabPageTasks
 			// 
 			tabPageTasks.Controls.Add(tableLayoutPanel2);
@@ -177,6 +193,21 @@
 			tabPageTasks.TabIndex = 1;
 			tabPageTasks.Text = "Tasks";
 			tabPageTasks.UseVisualStyleBackColor = true;
+			// 
+			// tableLayoutPanel2
+			// 
+			tableLayoutPanel2.ColumnCount = 1;
+			tableLayoutPanel2.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+			tableLayoutPanel2.Controls.Add(pnlTasksTop, 0, 0);
+			tableLayoutPanel2.Controls.Add(dgvTasks, 0, 1);
+			tableLayoutPanel2.Dock = DockStyle.Fill;
+			tableLayoutPanel2.Location = new Point(3, 3);
+			tableLayoutPanel2.Name = "tableLayoutPanel2";
+			tableLayoutPanel2.RowCount = 2;
+			tableLayoutPanel2.RowStyles.Add(new RowStyle(SizeType.Absolute, 55F));
+			tableLayoutPanel2.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+			tableLayoutPanel2.Size = new Size(786, 411);
+			tableLayoutPanel2.TabIndex = 5;
 			// 
 			// pnlTasksTop
 			// 
@@ -232,6 +263,7 @@
 			dgvTasks.RowHeadersWidth = 51;
 			dgvTasks.Size = new Size(780, 350);
 			dgvTasks.TabIndex = 0;
+			dgvTasks.CellDoubleClick += dgvTasks_CellDoubleClick;
 			// 
 			// tabPageAvailability
 			// 
@@ -419,36 +451,6 @@
 			dgvSchedule.Size = new Size(786, 247);
 			dgvSchedule.TabIndex = 2;
 			// 
-			// tableLayoutPanel1
-			// 
-			tableLayoutPanel1.ColumnCount = 1;
-			tableLayoutPanel1.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-			tableLayoutPanel1.Controls.Add(dgvCourses, 0, 1);
-			tableLayoutPanel1.Controls.Add(pnlCoursesTop, 0, 0);
-			tableLayoutPanel1.Dock = DockStyle.Fill;
-			tableLayoutPanel1.Location = new Point(3, 3);
-			tableLayoutPanel1.Name = "tableLayoutPanel1";
-			tableLayoutPanel1.RowCount = 2;
-			tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Absolute, 55F));
-			tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-			tableLayoutPanel1.Size = new Size(786, 411);
-			tableLayoutPanel1.TabIndex = 5;
-			// 
-			// tableLayoutPanel2
-			// 
-			tableLayoutPanel2.ColumnCount = 1;
-			tableLayoutPanel2.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-			tableLayoutPanel2.Controls.Add(pnlTasksTop, 0, 0);
-			tableLayoutPanel2.Controls.Add(dgvTasks, 0, 1);
-			tableLayoutPanel2.Dock = DockStyle.Fill;
-			tableLayoutPanel2.Location = new Point(3, 3);
-			tableLayoutPanel2.Name = "tableLayoutPanel2";
-			tableLayoutPanel2.RowCount = 2;
-			tableLayoutPanel2.RowStyles.Add(new RowStyle(SizeType.Absolute, 55F));
-			tableLayoutPanel2.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-			tableLayoutPanel2.Size = new Size(786, 411);
-			tableLayoutPanel2.TabIndex = 5;
-			// 
 			// Form1
 			// 
 			AutoScaleDimensions = new SizeF(8F, 20F);
@@ -460,10 +462,12 @@
 			Load += Form1_Load;
 			tabControl1.ResumeLayout(false);
 			tabPageCourses.ResumeLayout(false);
+			tableLayoutPanel1.ResumeLayout(false);
+			((System.ComponentModel.ISupportInitialize)dgvCourses).EndInit();
 			pnlCoursesTop.ResumeLayout(false);
 			pnlCoursesTop.PerformLayout();
-			((System.ComponentModel.ISupportInitialize)dgvCourses).EndInit();
 			tabPageTasks.ResumeLayout(false);
+			tableLayoutPanel2.ResumeLayout(false);
 			pnlTasksTop.ResumeLayout(false);
 			pnlTasksTop.PerformLayout();
 			((System.ComponentModel.ISupportInitialize)dgvTasks).EndInit();
@@ -478,8 +482,6 @@
 			pnlScheduleTop.ResumeLayout(false);
 			pnlScheduleTop.PerformLayout();
 			((System.ComponentModel.ISupportInitialize)dgvSchedule).EndInit();
-			tableLayoutPanel1.ResumeLayout(false);
-			tableLayoutPanel2.ResumeLayout(false);
 			ResumeLayout(false);
 		}
 

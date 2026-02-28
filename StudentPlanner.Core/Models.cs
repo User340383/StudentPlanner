@@ -12,23 +12,26 @@ namespace StudentPlanner.Core
 	{
 		public int Id { get; set; }
 		public int CourseId { get; set; }
-		public string Title { get; set; }
+		public string Title { get; set; } = "";
 		public DateTime Deadline { get; set; }
 		public double EstimatedHours { get; set; }
 		public int Priority { get; set; }
+		public bool IsCompleted { get; set; }
 	}
 	public class Availability
 	{
+		public int Id { get; set; }
 		public DayOfWeek Day { get; set; }
 		public TimeSpan Start { get; set; }
 		public TimeSpan End { get; set; }
 	}
 	public class Commitment
 	{
+		public int Id { get; set; }
 		public DayOfWeek Day { get; set; }
 		public TimeSpan Start { get; set; }
 		public TimeSpan End { get; set; }
-		public string Description { get; set; }
+		public string Description { get; set; } = "";
 	}
 	public class ScheduleBlock
 	{
