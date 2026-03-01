@@ -3,21 +3,27 @@ using StudentPlanner.Core;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace StudentPlanner.Data
 {
+	// Concrete implementation of ICommitmentRepository.
+	// Persists and retrieves fixed weekly commitments (e.g., work, meetings).
+	//
+	// DB mapping notes:
+	// - DayOfWeek stored as INTEGER (0..6)
+	// - StartTime / EndTime stored as TEXT in 24-hour "HH:mm" format
 	public class CommitmentRepository : ICommitmentRepository
 	{
 		private readonly string _connectionString;
 
+		// Allows optional injection of a custom connection string (useful for testing).
 		public CommitmentRepository(string? connectionString = null)
 		{
 			_connectionString = connectionString ?? DbConfig.GetConnectionString();
 		}
 
+		// Opens a SQLite connection and enables foreign key enforcement.
+		// SQLite requires PRAGMA foreign_keys = ON for every connection.
 		private SqliteConnection OpenConnection()
 		{
 			var conn = new SqliteConnection(_connectionString);
@@ -30,12 +36,16 @@ namespace StudentPlanner.Data
 			return conn;
 		}
 
+		// Convert TimeSpan to stable 24-hour format for storage.
+		// InvariantCulture prevents localization issues.
 		private static string ToDbTime(TimeSpan time)
 			=> time.ToString(@"hh\:mm", CultureInfo.InvariantCulture);
 
+		// Parse TimeSpan from stored "HH:mm" format.
 		private static TimeSpan FromDbTime(string text)
 			=> TimeSpan.ParseExact(text, @"hh\:mm", CultureInfo.InvariantCulture);
 
+		// Returns all commitments ordered by day then start time.
 		public List<Commitment> GetAll()
 		{
 			using var conn = OpenConnection();
@@ -65,6 +75,8 @@ ORDER BY DayOfWeek, StartTime;
 			return list;
 		}
 
+		// Inserts a new commitment and returns the generated primary key.
+		// Parameterized queries protect against SQL injection.
 		public int Add(Commitment item)
 		{
 			using var conn = OpenConnection();
@@ -85,6 +97,8 @@ SELECT last_insert_rowid();
 			return (int)newId;
 		}
 
+		// Deletes a commitment by primary key.
+		// Returns true if exactly one row was removed.
 		public bool Delete(int id)
 		{
 			using var conn = OpenConnection();

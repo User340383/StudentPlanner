@@ -3,68 +3,88 @@ using System.Collections.Generic;
 
 namespace StudentPlanner.Core
 {
+	// Represents an academic course.
+	// A Course is the parent entity for TaskItem.
 	public class Course
 	{
-		public int Id { get; set; }
-		public string Name { get; set; }
+		public int Id { get; set; }           // Primary key (DB)
+		public string Name { get; set; } = ""; // Unique course name
 	}
+
+	// Represents a task or assignment associated with a course.
 	public class TaskItem
 	{
-		public int Id { get; set; }
-		public int CourseId { get; set; }
-		public string Title { get; set; } = "";
-		public DateTime Deadline { get; set; }
-		public double EstimatedHours { get; set; }
-		public int Priority { get; set; }
-		public bool IsCompleted { get; set; }
+		public int Id { get; set; }              // Primary key
+		public int CourseId { get; set; }        // FK → Course.Id
+
+		public string Title { get; set; } = "";  // Short task description
+		public DateTime Deadline { get; set; }   // Stored in DB as ISO datetime
+		public double EstimatedHours { get; set; } // Expected effort
+		public int Priority { get; set; }        // 1–5 (enforced in DB)
+		public bool IsCompleted { get; set; }    // Completion flag
 	}
+
+	// Represents a recurring weekly availability window.
 	public class Availability
 	{
-		public int Id { get; set; }
-		public DayOfWeek Day { get; set; }
-		public TimeSpan Start { get; set; }
-		public TimeSpan End { get; set; }
+		public int Id { get; set; }              // Primary key
+		public DayOfWeek Day { get; set; }       // 0–6 (stored as INTEGER)
+		public TimeSpan Start { get; set; }      // Start of free window
+		public TimeSpan End { get; set; }        // End of free window (must be > Start)
 	}
+
+	// Represents a fixed commitment that blocks availability.
 	public class Commitment
 	{
-		public int Id { get; set; }
-		public DayOfWeek Day { get; set; }
-		public TimeSpan Start { get; set; }
-		public TimeSpan End { get; set; }
-		public string Description { get; set; } = "";
+		public int Id { get; set; }              // Primary key
+		public DayOfWeek Day { get; set; }       // Day of commitment
+		public TimeSpan Start { get; set; }      // Start time
+		public TimeSpan End { get; set; }        // End time
+		public string Description { get; set; } = ""; // Human-readable label
 	}
+
+	// Represents a generated scheduled study block for a task.
 	public class ScheduleBlock
 	{
-		public int TaskId { get; set; }
-		public DateTime Date { get; set; }
-		public TimeSpan Start { get; set; }
-		public TimeSpan End { get; set; }
-		public bool IsCompleted { get; set; }
-		public bool IsLocked { get; set; }
+		public int TaskId { get; set; }          // Associated TaskItem
+		public DateTime Date { get; set; }       // Specific calendar date
+		public TimeSpan Start { get; set; }      // Scheduled start
+		public TimeSpan End { get; set; }        // Scheduled end
+		public bool IsCompleted { get; set; }    // Block completion state
+		public bool IsLocked { get; set; }       // Prevents auto-rescheduling
 	}
+
+	// Defines contract for scheduling algorithm implementations.
 	public interface IScheduler
 	{
 		ScheduleResult GenerateWeeklySchedule(ScheduleInput input);
 	}
+
+	// Encapsulates all inputs required by the scheduling engine.
 	public class ScheduleInput
 	{
-		public List<TaskItem> Tasks { get; set; }
-		public List<Availability> Availability { get; set; }
-		public List<Commitment> Commitments { get; set; }
+		public List<TaskItem> Tasks { get; set; } = new();
+		public List<Availability> Availability { get; set; } = new();
+		public List<Commitment> Commitments { get; set; } = new();
 	}
+
+	// Encapsulates the result of a scheduling run.
 	public class ScheduleResult
 	{
-		public List<ScheduleBlock> ScheduleBlocks { get; set; }
-		public List<string> Warnings { get; set; }
+		public List<ScheduleBlock> ScheduleBlocks { get; set; } = new();
+		public List<string> Warnings { get; set; } = new();
 	}
+
+	// Temporary placeholder scheduler used during development.
+	// Allows UI and persistence layers to be built before algorithm logic.
 	public class DummyScheduler : IScheduler
 	{
 		public ScheduleResult GenerateWeeklySchedule(ScheduleInput input)
 		{
 			return new ScheduleResult
 			{
-				ScheduleBlocks = new List<ScheduleBlock>(),
-				Warnings = new List<string> { "Scheduler not implemented yet." }
+				ScheduleBlocks = new(),
+				Warnings = new() { "Scheduler not implemented yet." }
 			};
 		}
 	}

@@ -1,20 +1,21 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
 namespace StudentPlanner.Core
 {
+	// Persistence contract for TaskItem entities.
+	// Implementations (e.g., SQLite) live in the Data layer; UI depends only on this abstraction.
 	public interface ITaskRepository
 	{
-		List<TaskItem> GetAll();
-		List<TaskItem> GetByCourse(int courseId);
+		// Query operations
+		List<TaskItem> GetAll();                 // Returns all tasks (typically sorted by deadline)
+		List<TaskItem> GetByCourse(int courseId); // Returns tasks for a specific course (FK)
 
-		int Add(TaskItem task);
-		bool Update(TaskItem task);
-		bool Delete(int id);
+		// CRUD operations
+		int Add(TaskItem task);                  // Inserts task; returns generated Id
+		bool Update(TaskItem task);              // Updates existing task; true if one row affected
+		bool Delete(int id);                     // Deletes by Id; true if one row affected
 
+		// Targeted update used for UI toggles (avoids rewriting full row)
 		bool SetCompleted(int id, bool isCompleted);
 	}
 }

@@ -33,6 +33,8 @@
 			dtpEnd = new DateTimePicker();
 			btnOk = new Button();
 			btnCancel = new Button();
+			label1 = new Label();
+			label2 = new Label();
 			SuspendLayout();
 			// 
 			// cmbDay
@@ -82,11 +84,31 @@
 			btnCancel.Text = "Cancel";
 			btnCancel.UseVisualStyleBackColor = true;
 			// 
+			// label1
+			// 
+			label1.AutoSize = true;
+			label1.Location = new Point(117, 142);
+			label1.Name = "label1";
+			label1.Size = new Size(46, 20);
+			label1.TabIndex = 5;
+			label1.Text = "From:";
+			// 
+			// label2
+			// 
+			label2.AutoSize = true;
+			label2.Location = new Point(135, 212);
+			label2.Name = "label2";
+			label2.Size = new Size(28, 20);
+			label2.TabIndex = 6;
+			label2.Text = "To:";
+			// 
 			// AvailabilityEditForm
 			// 
 			AutoScaleDimensions = new SizeF(8F, 20F);
 			AutoScaleMode = AutoScaleMode.Font;
 			ClientSize = new Size(800, 450);
+			Controls.Add(label2);
+			Controls.Add(label1);
 			Controls.Add(btnCancel);
 			Controls.Add(btnOk);
 			Controls.Add(dtpEnd);
@@ -95,6 +117,7 @@
 			Name = "AvailabilityEditForm";
 			Text = "AvailabilityEditForm";
 			ResumeLayout(false);
+			PerformLayout();
 		}
 
 		#endregion
@@ -104,5 +127,7 @@
 		private DateTimePicker dtpEnd;
 		private Button btnOk;
 		private Button btnCancel;
+		private Label label1;
+		private Label label2;
 	}
 }

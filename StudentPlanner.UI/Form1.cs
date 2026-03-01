@@ -1,23 +1,34 @@
-using Microsoft.Data.Sqlite;
-using StudentPlanner.Core;
-using StudentPlanner.Data;
+using StudentPlanner.Core; // Domain models + interfaces (contracts)
+using StudentPlanner.Data; // Concrete repository implementations (SQLite persistence)
 
 namespace StudentPlanner.UI
 {
 	public partial class Form1 : Form
 	{
+		// Repositories provide persistence operations (CRUD) for each domain entity.
+		// We store them as interface types so the UI depends on abstractions (Core),
+		// not directly on implementation details (Data).
 		private readonly ICourseRepository _courses = new CourseRepository();
 		private readonly ITaskRepository _tasks = new TaskRepository();
 		private readonly IAvailabilityRepository _availability = new AvailabilityRepository();
 		private readonly ICommitmentRepository _commitments = new CommitmentRepository();
+
 		public Form1()
 		{
 			InitializeComponent();
 		}
 
+		// -----------------------------
+		// Courses tab: Add/Edit/Delete
+		// -----------------------------
+
 		private void btnAddCourse_Click(object sender, EventArgs e)
 		{
+			// Read user input and normalize it (trim whitespace).
+			// This prevents accidental duplicates like "Math" vs "Math ".
 			string name = txtCourseName.Text.Trim();
+
+			// Validate required field early to avoid DB round-trips.
 			if (string.IsNullOrWhiteSpace(name))
 			{
 				MessageBox.Show("Please enter a course name.");
@@ -26,18 +37,24 @@ namespace StudentPlanner.UI
 
 			try
 			{
+				// Persist course. The DB enforces uniqueness on Name.
 				_courses.Add(name);
+
+				// Clear input and refresh the grid to reflect saved state.
 				txtCourseName.Clear();
 				RefreshCoursesGrid();
 			}
 			catch (Exception)
 			{
+				// In production you'd log ex details.
+				// Here we give the user a friendly message without exposing internals.
 				MessageBox.Show("That course already exists (or the database rejected it).");
 			}
 		}
 
 		private void btnEditCourse_Click(object sender, EventArgs e)
 		{
+			// Editing requires a selected row in the courses grid.
 			var selected = GetSelectedCourse();
 			if (selected == null)
 			{
@@ -45,6 +62,8 @@ namespace StudentPlanner.UI
 				return;
 			}
 
+			// For this simple UI, we use the textbox as the "new name".
+			// (A dedicated edit dialog is a common future improvement.)
 			string newName = txtCourseName.Text.Trim();
 			if (string.IsNullOrWhiteSpace(newName))
 			{
@@ -54,18 +73,23 @@ namespace StudentPlanner.UI
 
 			try
 			{
+				// Update uses the selected course Id to target the correct record.
 				_courses.Update(selected.Id, newName);
+
+				// Clear input and reload the grid so the user sees the result immediately.
 				txtCourseName.Clear();
 				RefreshCoursesGrid();
 			}
 			catch
 			{
+				// Typically triggered by the UNIQUE constraint on Courses.Name.
 				MessageBox.Show("That course name already exists.");
 			}
 		}
 
 		private void btnDeleteCourse_Click(object sender, EventArgs e)
 		{
+			// Deleting requires a selected course.
 			var selected = GetSelectedCourse();
 			if (selected == null)
 			{
@@ -73,16 +97,30 @@ namespace StudentPlanner.UI
 				return;
 			}
 
-			var confirm = MessageBox.Show($"Delete '{selected.Name}'?", "Confirm", MessageBoxButtons.YesNo);
-			if (confirm != DialogResult.Yes) return;
+			// Confirm destructive action.
+			var confirm = MessageBox.Show(
+				$"Delete '{selected.Name}'?",
+				"Confirm",
+				MessageBoxButtons.YesNo);
 
+			if (confirm != DialogResult.Yes)
+			{
+				return;
+			}
+
+			// Delete and refresh to keep UI consistent with DB state.
 			_courses.Delete(selected.Id);
 			RefreshCoursesGrid();
 		}
 
+		// -----------------------------
+		// Tasks tab: Add/Edit/Delete
+		// -----------------------------
+
 		private void btnAddTask_Click(object sender, EventArgs e)
 		{
-			// Need at least one course because Tasks have CourseId (FK)
+			// Tasks reference Courses via CourseId (foreign key),
+			// so at least one course must exist.
 			var courses = _courses.GetAll();
 			if (courses.Count == 0)
 			{
@@ -90,8 +128,10 @@ namespace StudentPlanner.UI
 				return;
 			}
 
+			// Use a modal dialog to collect task details in a clean UX.
 			using var dlg = new TaskEditForm(courses, "Add Task");
 
+			// If the user cancels, do nothing.
 			if (dlg.ShowDialog(this) != DialogResult.OK)
 			{
 				return;
@@ -99,17 +139,22 @@ namespace StudentPlanner.UI
 
 			try
 			{
+				// Persist task to DB.
 				_tasks.Add(dlg.ResultTask);
+
+				// Refresh grid to show the inserted record.
 				RefreshTasksGrid();
 			}
 			catch (Exception ex)
 			{
+				// Friendly error for the user; include message for debugging.
 				MessageBox.Show($"Could not add task: {ex.Message}");
 			}
 		}
 
 		private void btnEditTask_Click(object sender, EventArgs e)
 		{
+			// Edit requires selection.
 			var selected = GetSelectedTask();
 			if (selected == null)
 			{
@@ -117,12 +162,15 @@ namespace StudentPlanner.UI
 				return;
 			}
 
+			// Tasks depend on courses; ensure we can populate the course dropdown.
 			var courses = _courses.GetAll();
 			if (courses.Count == 0)
 			{
 				MessageBox.Show("No courses exist. Add a course first.");
 				return;
 			}
+
+			// Open dialog pre-filled with the selected task.
 			using var dlg = new TaskEditForm(courses, "Edit Task", selected);
 
 			if (dlg.ShowDialog(this) != DialogResult.OK)
@@ -130,7 +178,9 @@ namespace StudentPlanner.UI
 				return;
 			}
 
-			// IMPORTANT: preserve the task ID so UPDATE targets the right row
+			// IMPORTANT:
+			// The dialog returns a new TaskItem built from user input.
+			// We must preserve the original Id so Update() targets the correct DB row.
 			var updated = dlg.ResultTask;
 			updated.Id = selected.Id;
 
@@ -176,13 +226,21 @@ namespace StudentPlanner.UI
 			}
 		}
 
+		// -----------------------------
+		// Availability tab: Add/Delete
+		// -----------------------------
+
 		private void btnAddAvailability_Click(object sender, EventArgs e)
 		{
+			// Modal dialog collects day + start + end; it returns Availability in dlg.Result.
 			using var dlg = new AvailabilityEditForm("Add Availability");
 
 			if (dlg.ShowDialog(this) != DialogResult.OK)
+			{
 				return;
+			}
 
+			// Persist and refresh immediately.
 			_availability.Add(dlg.Result);
 			RefreshAvailabilityGrid();
 		}
@@ -202,18 +260,27 @@ namespace StudentPlanner.UI
 				MessageBoxButtons.YesNo,
 				MessageBoxIcon.Warning);
 
-			if (confirm != DialogResult.Yes) return;
+			if (confirm != DialogResult.Yes)
+			{
+				return;
+			}
 
 			_availability.Delete(selected.Id);
 			RefreshAvailabilityGrid();
 		}
+
+		// -----------------------------
+		// Commitments tab: Add/Delete
+		// -----------------------------
 
 		private void btnAddCommitment_Click(object sender, EventArgs e)
 		{
 			using var dlg = new CommitmentEditForm("Add Commitment");
 
 			if (dlg.ShowDialog(this) != DialogResult.OK)
+			{
 				return;
+			}
 
 			_commitments.Add(dlg.Result);
 			RefreshCommitmentsGrid();
@@ -234,16 +301,28 @@ namespace StudentPlanner.UI
 				MessageBoxButtons.YesNo,
 				MessageBoxIcon.Warning);
 
-			if (confirm != DialogResult.Yes) return;
+			if (confirm != DialogResult.Yes)
+			{
+				return;
+			}
 
 			_commitments.Delete(selected.Id);
 			RefreshCommitmentsGrid();
 		}
 
+		// -----------------------------
+		// Scheduling (stub)
+		// -----------------------------
+
 		private void btnGenerateSchedule_Click(object sender, EventArgs e)
 		{
+			// Placeholder scheduler. Later weeks will replace this with real logic.
 			IScheduler scheduler = new DummyScheduler();
 
+			// Later: build ScheduleInput from repository data:
+			// - tasks from _tasks
+			// - availability from _availability
+			// - commitments from _commitments
 			var input = new ScheduleInput
 			{
 				Tasks = new List<TaskItem>(),
@@ -253,46 +332,42 @@ namespace StudentPlanner.UI
 
 			var result = scheduler.GenerateWeeklySchedule(input);
 
+			// For now, just display the first warning.
 			MessageBox.Show(result.Warnings.First());
 		}
 
 		private void btnRegenerateSchedule_Click(object sender, EventArgs e)
 		{
+			// Planned feature: rerun scheduling while respecting locked blocks/completions.
 			MessageBox.Show("Not implemented yet");
 		}
 
+		// -----------------------------
+		// Grid binding helpers
+		// -----------------------------
+
 		private void RefreshCoursesGrid()
 		{
+			// Load from DB on-demand (no caching), ensuring UI reflects persisted state.
 			var courses = _courses.GetAll();
 
+			// Reset binding to avoid stale data.
 			dgvCourses.DataSource = null;
-			dgvCourses.AutoGenerateColumns = true; // default, but explicit is fine
+			dgvCourses.AutoGenerateColumns = true;
 			dgvCourses.DataSource = courses;
 
-			// Optional: hide internal Id
+			// Hide internal DB key from user (optional).
 			if (dgvCourses.Columns.Contains("Id"))
 			{
 				dgvCourses.Columns["Id"].Visible = false;
 			}
 
+			// Standardized grid UX.
 			dgvCourses.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
 			dgvCourses.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
 			dgvCourses.MultiSelect = false;
 			dgvCourses.ReadOnly = true;
 			dgvCourses.AllowUserToAddRows = false;
-		}
-
-		private void Form1_Load(object sender, EventArgs e)
-		{
-			RefreshCoursesGrid();
-			RefreshTasksGrid();
-			RefreshAvailabilityGrid();
-			RefreshCommitmentsGrid();
-		}
-
-		private Course? GetSelectedCourse()
-		{
-			return dgvCourses.CurrentRow?.DataBoundItem as Course;
 		}
 
 		private void RefreshTasksGrid()
@@ -302,13 +377,15 @@ namespace StudentPlanner.UI
 			dgvTasks.DataSource = null;
 			dgvTasks.DataSource = tasks;
 
-			// Hide internal ids (optional)
+			// Hide internal DB keys (optional).
 			if (dgvTasks.Columns.Contains("Id"))
+			{
 				dgvTasks.Columns["Id"].Visible = false;
+			}
 
 			if (dgvTasks.Columns.Contains("CourseId"))
 			{
-				dgvTasks.Columns["CourseId"].Visible = false; // optional (hide if you don't want it visible)
+				dgvTasks.Columns["CourseId"].Visible = false;
 			}
 
 			dgvTasks.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
@@ -318,8 +395,62 @@ namespace StudentPlanner.UI
 			dgvTasks.AllowUserToAddRows = false;
 		}
 
+		private void RefreshAvailabilityGrid()
+		{
+			var blocks = _availability.GetAll();
+
+			dgvAvailability.DataSource = null;
+			dgvAvailability.DataSource = blocks;
+
+			if (dgvAvailability.Columns.Contains("Id"))
+			{
+				dgvAvailability.Columns["Id"].Visible = false;
+			}
+
+			dgvAvailability.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+			dgvAvailability.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+			dgvAvailability.MultiSelect = false;
+			dgvAvailability.ReadOnly = true;
+			dgvAvailability.AllowUserToAddRows = false;
+		}
+
+		private void RefreshCommitmentsGrid()
+		{
+			var items = _commitments.GetAll();
+
+			dgvCommitments.DataSource = null;
+			dgvCommitments.DataSource = items;
+
+			if (dgvCommitments.Columns.Contains("Id"))
+			{
+				dgvCommitments.Columns["Id"].Visible = false;
+			}
+
+			dgvCommitments.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+			dgvCommitments.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+			dgvCommitments.MultiSelect = false;
+			dgvCommitments.ReadOnly = true;
+			dgvCommitments.AllowUserToAddRows = false;
+		}
+
+		// -----------------------------
+		// Form + tab lifecycle events
+		// -----------------------------
+
+		private void Form1_Load(object sender, EventArgs e)
+		{
+			// Initial load: bring all grids into sync with DB.
+			// (Some apps only refresh the active tab; doing all is fine for small datasets.)
+			RefreshCoursesGrid();
+			RefreshTasksGrid();
+			RefreshAvailabilityGrid();
+			RefreshCommitmentsGrid();
+		}
+
 		private void tabControl1_SelectedIndexChanged(object sender, EventArgs e)
 		{
+			// Refresh on tab navigation to ensure user always sees latest DB state.
+			// This also avoids WinForms rendering/binding quirks when a grid hasn't been shown yet.
 			if (tabControl1.SelectedTab == tabPageTasks)
 			{
 				RefreshTasksGrid();
@@ -337,52 +468,19 @@ namespace StudentPlanner.UI
 			}
 		}
 
+		// -----------------------------
+		// Selection helpers
+		// -----------------------------
+
+		private Course? GetSelectedCourse()
+		{
+			// DataBoundItem returns the underlying object bound to the selected row.
+			return dgvCourses.CurrentRow?.DataBoundItem as Course;
+		}
+
 		private TaskItem? GetSelectedTask()
 		{
 			return dgvTasks.CurrentRow?.DataBoundItem as TaskItem;
-		}
-
-		private void dgvTasks_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
-		{
-			if (e.RowIndex < 0)
-			{
-				return;
-			}
-			btnEditTask.PerformClick();
-		}
-
-		private void RefreshAvailabilityGrid()
-		{
-			var blocks = _availability.GetAll();
-
-			dgvAvailability.DataSource = null;
-			dgvAvailability.DataSource = blocks;
-
-			if (dgvAvailability.Columns.Contains("Id"))
-				dgvAvailability.Columns["Id"].Visible = false;
-
-			dgvAvailability.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
-			dgvAvailability.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-			dgvAvailability.MultiSelect = false;
-			dgvAvailability.ReadOnly = true;
-			dgvAvailability.AllowUserToAddRows = false;
-		}
-
-		private void RefreshCommitmentsGrid()
-		{
-			var items = _commitments.GetAll();
-
-			dgvCommitments.DataSource = null;
-			dgvCommitments.DataSource = items;
-
-			if (dgvCommitments.Columns.Contains("Id"))
-				dgvCommitments.Columns["Id"].Visible = false;
-
-			dgvCommitments.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
-			dgvCommitments.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-			dgvCommitments.MultiSelect = false;
-			dgvCommitments.ReadOnly = true;
-			dgvCommitments.AllowUserToAddRows = false;
 		}
 
 		private Availability? GetSelectedAvailability()
@@ -393,6 +491,22 @@ namespace StudentPlanner.UI
 		private Commitment? GetSelectedCommitment()
 		{
 			return dgvCommitments.CurrentRow?.DataBoundItem as Commitment;
+		}
+
+		// -----------------------------
+		// Convenience UX
+		// -----------------------------
+
+		private void dgvTasks_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
+		{
+			// Ignore header clicks (RowIndex < 0 indicates header).
+			if (e.RowIndex < 0)
+			{
+				return;
+			}
+
+			// Treat double-click as a shortcut for editing.
+			btnEditTask.PerformClick();
 		}
 	}
 }

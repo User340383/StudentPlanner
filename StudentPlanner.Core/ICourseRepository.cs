@@ -1,16 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
 namespace StudentPlanner.Core
 {
+	// Persistence contract for Course entities.
+	// Courses are the parent entity of tasks (Tasks.CourseId FK).
 	public interface ICourseRepository
 	{
-		List<Course> GetAll();
-		int Add(string name);
-		bool Update(int id, string newName);
-		bool Delete(int id);
+		List<Course> GetAll();                   // Returns all courses (typically alphabetical)
+		int Add(string name);                    // Inserts course; returns generated Id
+		bool Update(int id, string newName);     // Renames course; true if one row affected
+		bool Delete(int id);                     // Deletes course; true if one row affected (may cascade)
 	}
 }
