@@ -13,6 +13,8 @@ namespace StudentPlanner.UI
 		private readonly IAvailabilityRepository _availability = new AvailabilityRepository();
 		private readonly ICommitmentRepository _commitments = new CommitmentRepository();
 
+		private ScheduleResult? _lastSchedule;
+
 		public Form1()
 		{
 			InitializeComponent();
@@ -316,30 +318,23 @@ namespace StudentPlanner.UI
 
 		private void btnGenerateSchedule_Click(object sender, EventArgs e)
 		{
-			// Placeholder scheduler. Later weeks will replace this with real logic.
-			IScheduler scheduler = new DummyScheduler();
+			IScheduler scheduler = new GreedyScheduler(TimeSpan.FromMinutes(60)); // 1-hour blocks
 
-			// Later: build ScheduleInput from repository data:
-			// - tasks from _tasks
-			// - availability from _availability
-			// - commitments from _commitments
 			var input = new ScheduleInput
 			{
-				Tasks = new List<TaskItem>(),
-				Availability = new List<Availability>(),
-				Commitments = new List<Commitment>()
+				Tasks = _tasks.GetAll(),
+				Availability = _availability.GetAll(),
+				Commitments = _commitments.GetAll()
 			};
 
 			var result = scheduler.GenerateWeeklySchedule(input);
 
-			// For now, just display the first warning.
-			MessageBox.Show(result.Warnings.First());
+			ShowSchedule(result);
 		}
 
 		private void btnRegenerateSchedule_Click(object sender, EventArgs e)
 		{
-			// Planned feature: rerun scheduling while respecting locked blocks/completions.
-			MessageBox.Show("Not implemented yet");
+			btnGenerateSchedule.PerformClick();
 		}
 
 		// -----------------------------
@@ -507,6 +502,31 @@ namespace StudentPlanner.UI
 
 			// Treat double-click as a shortcut for editing.
 			btnEditTask.PerformClick();
+		}
+
+		private void ShowSchedule(ScheduleResult result)
+		{
+			// --- Schedule grid ---
+			dgvSchedule.DataSource = null;
+
+			// For now, bind the raw blocks list directly.
+			// (Later we can join TaskId -> Task Title to display titles instead of IDs.)
+			dgvSchedule.AutoGenerateColumns = true;
+			dgvSchedule.DataSource = result.ScheduleBlocks;
+
+			dgvSchedule.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+			dgvSchedule.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+			dgvSchedule.MultiSelect = false;
+			dgvSchedule.ReadOnly = true;
+			dgvSchedule.AllowUserToAddRows = false;
+
+			// --- Warnings list ---
+			lstWarnings.Items.Clear();
+			foreach (var w in result.Warnings)
+				lstWarnings.Items.Add(w);
+
+			// Keep the latest schedule for "Regenerate"
+			_lastSchedule = result;
 		}
 	}
 }
