@@ -46,11 +46,12 @@ namespace StudentPlanner.Core
 	// Represents a generated scheduled study block for a task.
 	public class ScheduleBlock
 	{
-		public int TaskId { get; set; }          // Associated TaskItem
-		public DateTime Date { get; set; }       // Specific calendar date
-		public TimeSpan Start { get; set; }      // Scheduled start
-		public TimeSpan End { get; set; }        // Scheduled end
-		public bool IsCompleted { get; set; }    // Block completion state
+		public int Id { get; set; }              // Primary key
+		public int TaskId { get; set; }          // Associated Task
+		public DateTime Date { get; set; }       // Calendar date
+		public TimeSpan Start { get; set; }      // Start time
+		public TimeSpan End { get; set; }        // End time
+		public bool IsCompleted { get; set; }    // Completion state
 		public bool IsLocked { get; set; }       // Prevents auto-rescheduling
 	}
 

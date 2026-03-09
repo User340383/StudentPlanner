@@ -12,6 +12,7 @@ namespace StudentPlanner.UI
 		private readonly ITaskRepository _tasks = new TaskRepository();
 		private readonly IAvailabilityRepository _availability = new AvailabilityRepository();
 		private readonly ICommitmentRepository _commitments = new CommitmentRepository();
+		private readonly IScheduleBlockRepository _scheduleBlocks = new ScheduleBlockRepository();
 
 		private ScheduleResult? _lastSchedule;
 
@@ -318,7 +319,7 @@ namespace StudentPlanner.UI
 
 		private void btnGenerateSchedule_Click(object sender, EventArgs e)
 		{
-			IScheduler scheduler = new GreedyScheduler(TimeSpan.FromMinutes(60)); // 1-hour blocks
+			IScheduler scheduler = new GreedyScheduler(TimeSpan.FromMinutes(60));
 
 			var input = new ScheduleInput
 			{
@@ -329,7 +330,13 @@ namespace StudentPlanner.UI
 
 			var result = scheduler.GenerateWeeklySchedule(input);
 
-			ShowSchedule(result);
+			// Replace old persisted schedule with the newly generated one
+			_scheduleBlocks.DeleteAll();
+			_scheduleBlocks.AddMany(result.ScheduleBlocks);
+
+			// Reload from DB so SQLite becomes the source of truth
+			RefreshScheduleGrid();
+			ShowWarnings(result.Warnings);
 		}
 
 		private void btnRegenerateSchedule_Click(object sender, EventArgs e)
@@ -440,12 +447,11 @@ namespace StudentPlanner.UI
 			RefreshTasksGrid();
 			RefreshAvailabilityGrid();
 			RefreshCommitmentsGrid();
+			RefreshScheduleGrid();
 		}
 
 		private void tabControl1_SelectedIndexChanged(object sender, EventArgs e)
 		{
-			// Refresh on tab navigation to ensure user always sees latest DB state.
-			// This also avoids WinForms rendering/binding quirks when a grid hasn't been shown yet.
 			if (tabControl1.SelectedTab == tabPageTasks)
 			{
 				RefreshTasksGrid();
@@ -460,6 +466,11 @@ namespace StudentPlanner.UI
 			{
 				RefreshAvailabilityGrid();
 				RefreshCommitmentsGrid();
+			}
+
+			if (tabControl1.SelectedTab == tabPageSchedule)
+			{
+				RefreshScheduleGrid();
 			}
 		}
 
@@ -527,6 +538,42 @@ namespace StudentPlanner.UI
 
 			// Keep the latest schedule for "Regenerate"
 			_lastSchedule = result;
+		}
+
+		private void RefreshScheduleGrid()
+		{
+			var blocks = _scheduleBlocks.GetAll();
+
+			dgvSchedule.DataSource = null;
+			dgvSchedule.AutoGenerateColumns = true;
+			dgvSchedule.DataSource = blocks;
+
+			// Hide internal database keys if desired
+			if (dgvSchedule.Columns.Contains("Id"))
+			{
+				dgvSchedule.Columns["Id"].Visible = false;
+			}
+
+			if (dgvSchedule.Columns.Contains("TaskId"))
+			{
+				dgvSchedule.Columns["TaskId"].Visible = true; // keep visible for now; later can replace with task title
+			}
+
+			dgvSchedule.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+			dgvSchedule.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+			dgvSchedule.MultiSelect = false;
+			dgvSchedule.ReadOnly = true;
+			dgvSchedule.AllowUserToAddRows = false;
+		}
+
+		private void ShowWarnings(List<string> warnings)
+		{
+			lstWarnings.Items.Clear();
+
+			foreach (var warning in warnings)
+			{
+				lstWarnings.Items.Add(warning);
+			}
 		}
 	}
 }
