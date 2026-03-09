@@ -149,6 +149,73 @@ SELECT last_insert_rowid();
 			}
 		}
 
+		// Updates all persisted fields of a schedule block.
+		// Useful when editing a block more broadly than just toggling flags.
+		public bool Update(ScheduleBlock block)
+		{
+			using var conn = OpenConnection();
+			using var cmd = conn.CreateCommand();
+
+			cmd.CommandText = @"
+UPDATE ScheduleBlocks
+SET TaskId = $taskId,
+    Date = $date,
+    StartTime = $start,
+    EndTime = $end,
+    IsCompleted = $completed,
+    IsLocked = $locked
+WHERE Id = $id;
+";
+
+			cmd.Parameters.AddWithValue("$taskId", block.TaskId);
+			cmd.Parameters.AddWithValue("$date", ToDbDate(block.Date));
+			cmd.Parameters.AddWithValue("$start", ToDbTime(block.Start));
+			cmd.Parameters.AddWithValue("$end", ToDbTime(block.End));
+			cmd.Parameters.AddWithValue("$completed", block.IsCompleted ? 1 : 0);
+			cmd.Parameters.AddWithValue("$locked", block.IsLocked ? 1 : 0);
+			cmd.Parameters.AddWithValue("$id", block.Id);
+
+			return cmd.ExecuteNonQuery() == 1;
+		}
+
+		// Updates only the lock state of a schedule block.
+		// Used by the UI when the user chooses to preserve a block during regeneration.
+		public bool SetLocked(int id, bool isLocked)
+		{
+			using var conn = OpenConnection();
+			using var cmd = conn.CreateCommand();
+
+			cmd.CommandText = @"
+UPDATE ScheduleBlocks
+SET IsLocked = $locked
+WHERE Id = $id;
+";
+
+			cmd.Parameters.AddWithValue("$locked", isLocked ? 1 : 0);
+			cmd.Parameters.AddWithValue("$id", id);
+
+			return cmd.ExecuteNonQuery() == 1;
+		}
+
+		// Updates only the completion state of a schedule block.
+		// Used when the user marks a scheduled study session as done.
+		public bool SetCompleted(int id, bool isCompleted)
+		{
+			using var conn = OpenConnection();
+			using var cmd = conn.CreateCommand();
+
+			cmd.CommandText = @"
+UPDATE ScheduleBlocks
+SET IsCompleted = $completed
+WHERE Id = $id;
+";
+
+			cmd.Parameters.AddWithValue("$completed", isCompleted ? 1 : 0);
+			cmd.Parameters.AddWithValue("$id", id);
+
+			return cmd.ExecuteNonQuery() == 1;
+		}
+
 		// Deletes one schedule block by primary key.
 		public bool Delete(int id)
 		{
@@ -174,6 +241,21 @@ WHERE Id = $id;
 
 			cmd.CommandText = @"
 DELETE FROM ScheduleBlocks;
+";
+
+			cmd.ExecuteNonQuery();
+		}
+
+		// Deletes schedule blocks that are neither locked nor completed.
+		// Used during regeneration so preserved blocks remain in place.
+		public void DeleteUnlockedAndIncomplete()
+		{
+			using var conn = OpenConnection();
+			using var cmd = conn.CreateCommand();
+
+			cmd.CommandText = @"
+DELETE FROM ScheduleBlocks
+WHERE IsLocked = 0 AND IsCompleted = 0;
 ";
 
 			cmd.ExecuteNonQuery();

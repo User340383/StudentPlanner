@@ -341,7 +341,84 @@ namespace StudentPlanner.UI
 
 		private void btnRegenerateSchedule_Click(object sender, EventArgs e)
 		{
-			btnGenerateSchedule.PerformClick();
+			IScheduler scheduler = new GreedyScheduler(TimeSpan.FromMinutes(60));
+
+			// Load current persisted state
+			var allTasks = _tasks.GetAll();
+			var availability = _availability.GetAll();
+			var commitments = _commitments.GetAll();
+			var existingBlocks = _scheduleBlocks.GetAll();
+
+			// Blocks we must preserve during regeneration
+			var preservedBlocks = existingBlocks
+				.Where(b => b.IsLocked || b.IsCompleted)
+				.ToList();
+
+			// Convert preserved blocks into temporary commitments
+			// so the scheduler will avoid those time ranges.
+			var preservedAsCommitments = preservedBlocks
+				.Select(b => new Commitment
+				{
+					Day = b.Date.DayOfWeek,
+					Start = b.Start,
+					End = b.End,
+					Description = b.IsLocked ? "Locked schedule block" : "Completed schedule block"
+				})
+				.ToList();
+
+			// Combine real commitments with preserved schedule blocks
+			var effectiveCommitments = commitments
+				.Concat(preservedAsCommitments)
+				.ToList();
+
+			// Build a new task list with reduced remaining hours
+			var regeneratedTasks = new List<TaskItem>();
+
+			foreach (var task in allTasks)
+			{
+				// Sum completed block hours for this task
+				double preservedHours = existingBlocks
+					.Where(b => b.TaskId == task.Id && (b.IsCompleted || b.IsLocked))
+					.Sum(b => (b.End - b.Start).TotalHours);
+
+				double remainingHours = Math.Max(0, task.EstimatedHours - preservedHours);
+
+				// Skip tasks that are already effectively completed
+				if (remainingHours <= 0.0001)
+				{
+					continue;
+				}
+
+				regeneratedTasks.Add(new TaskItem
+				{
+					Id = task.Id,
+					CourseId = task.CourseId,
+					Title = task.Title,
+					Deadline = task.Deadline,
+					EstimatedHours = remainingHours,
+					Priority = task.Priority,
+					IsCompleted = task.IsCompleted
+				});
+			}
+
+			var input = new ScheduleInput
+			{
+				Tasks = regeneratedTasks,
+				Availability = availability,
+				Commitments = effectiveCommitments
+			};
+
+			var result = scheduler.GenerateWeeklySchedule(input);
+
+			// Remove only blocks that are allowed to be regenerated
+			_scheduleBlocks.DeleteUnlockedAndIncomplete();
+
+			// Persist the newly generated blocks
+			_scheduleBlocks.AddMany(result.ScheduleBlocks);
+
+			// Reload persisted state into UI
+			RefreshScheduleGrid();
+			ShowWarnings(result.Warnings);
 		}
 
 		// -----------------------------
@@ -574,6 +651,47 @@ namespace StudentPlanner.UI
 			{
 				lstWarnings.Items.Add(warning);
 			}
+		}
+
+		private ScheduleBlock? GetSelectedScheduleBlock()
+		{
+			return dgvSchedule.CurrentRow?.DataBoundItem as ScheduleBlock;
+		}
+
+		private void btnToggleLock_Click(object sender, EventArgs e)
+		{
+			var selected = GetSelectedScheduleBlock();
+			if (selected == null)
+			{
+				MessageBox.Show("Select a schedule block first.");
+				return;
+			}
+
+			// Toggle the current lock state
+			bool newLockedState = !selected.IsLocked;
+
+			_scheduleBlocks.SetLocked(selected.Id, newLockedState);
+
+			// Reload the grid so the user immediately sees the updated flag
+			RefreshScheduleGrid();
+		}
+
+		private void btnToggleComplete_Click(object sender, EventArgs e)
+		{
+			var selected = GetSelectedScheduleBlock();
+			if (selected == null)
+			{
+				MessageBox.Show("Select a schedule block first.");
+				return;
+			}
+
+			// Toggle the current completion state
+			bool newCompletedState = !selected.IsCompleted;
+
+			_scheduleBlocks.SetCompleted(selected.Id, newCompletedState);
+
+			// Reload the grid so the user immediately sees the updated flag
+			RefreshScheduleGrid();
 		}
 	}
 }

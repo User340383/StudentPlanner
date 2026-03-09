@@ -56,6 +56,8 @@
 			tabPageSchedule = new TabPage();
 			tlpSchedule = new TableLayoutPanel();
 			pnlScheduleTop = new Panel();
+			btnToggleComplete = new Button();
+			btnToggleLock = new Button();
 			btnGenerateSchedule = new Button();
 			btnRegenerateSchedule = new Button();
 			lstWarnings = new ListBox();
@@ -398,6 +400,8 @@
 			// 
 			// pnlScheduleTop
 			// 
+			pnlScheduleTop.Controls.Add(btnToggleComplete);
+			pnlScheduleTop.Controls.Add(btnToggleLock);
 			pnlScheduleTop.Controls.Add(btnGenerateSchedule);
 			pnlScheduleTop.Controls.Add(btnRegenerateSchedule);
 			pnlScheduleTop.Dock = DockStyle.Fill;
@@ -406,6 +410,26 @@
 			pnlScheduleTop.Padding = new Padding(5);
 			pnlScheduleTop.Size = new Size(786, 49);
 			pnlScheduleTop.TabIndex = 4;
+			// 
+			// btnToggleComplete
+			// 
+			btnToggleComplete.Location = new Point(508, 8);
+			btnToggleComplete.Name = "btnToggleComplete";
+			btnToggleComplete.Size = new Size(132, 29);
+			btnToggleComplete.TabIndex = 3;
+			btnToggleComplete.Text = "Toggle Complete";
+			btnToggleComplete.UseVisualStyleBackColor = true;
+			btnToggleComplete.Click += btnToggleComplete_Click;
+			// 
+			// btnToggleLock
+			// 
+			btnToggleLock.Location = new Point(646, 8);
+			btnToggleLock.Name = "btnToggleLock";
+			btnToggleLock.Size = new Size(132, 29);
+			btnToggleLock.TabIndex = 2;
+			btnToggleLock.Text = "Toggle Lock";
+			btnToggleLock.UseVisualStyleBackColor = true;
+			btnToggleLock.Click += btnToggleLock_Click;
 			// 
 			// btnGenerateSchedule
 			// 
@@ -519,5 +543,7 @@
 		private TextBox txtCourseName;
 		private TableLayoutPanel tableLayoutPanel1;
 		private TableLayoutPanel tableLayoutPanel2;
+		private Button btnToggleComplete;
+		private Button btnToggleLock;
 	}
 }
