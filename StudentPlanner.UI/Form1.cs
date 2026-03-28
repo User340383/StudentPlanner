@@ -1,5 +1,6 @@
 using StudentPlanner.Core; // Domain models + interfaces (contracts)
 using StudentPlanner.Data; // Concrete repository implementations (SQLite persistence)
+using System.Drawing;
 
 namespace StudentPlanner.UI
 {
@@ -620,20 +621,46 @@ namespace StudentPlanner.UI
 		private void RefreshScheduleGrid()
 		{
 			var blocks = _scheduleBlocks.GetAll();
+			var tasks = _tasks.GetAll();
+			var courses = _courses.GetAll();
+
+			// Build a display-friendly view
+			var display = blocks.Select(b =>
+			{
+				var task = tasks.FirstOrDefault(t => t.Id == b.TaskId);
+				var course = task != null
+					? courses.FirstOrDefault(c => c.Id == task.CourseId)
+					: null;
+
+				return new
+				{
+					b.Id,
+					Task = task != null
+						? $"{task.Title} ({course?.Name ?? "Unknown"})"
+						: "Unknown Task",
+
+					Date = b.Date.ToShortDateString(),
+					Start = b.Start.ToString(@"hh\:mm"),
+					End = b.End.ToString(@"hh\:mm"),
+					b.IsCompleted,
+					b.IsLocked
+				};
+			}).ToList();
 
 			dgvSchedule.DataSource = null;
-			dgvSchedule.AutoGenerateColumns = true;
-			dgvSchedule.DataSource = blocks;
+			dgvSchedule.DataSource = display;
 
-			// Hide internal database keys if desired
+			dgvSchedule.Columns["Task"].HeaderText = "Task";
+			dgvSchedule.Columns["Date"].HeaderText = "Date";
+			dgvSchedule.Columns["Start"].HeaderText = "Start Time";
+			dgvSchedule.Columns["End"].HeaderText = "End Time";
+			dgvSchedule.Columns["IsCompleted"].HeaderText = "Completed";
+			dgvSchedule.Columns["IsLocked"].HeaderText = "Locked";
+
+			// Hide internal Id
 			if (dgvSchedule.Columns.Contains("Id"))
 			{
 				dgvSchedule.Columns["Id"].Visible = false;
-			}
-
-			if (dgvSchedule.Columns.Contains("TaskId"))
-			{
-				dgvSchedule.Columns["TaskId"].Visible = true; // keep visible for now; later can replace with task title
 			}
 
 			dgvSchedule.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
@@ -655,7 +682,14 @@ namespace StudentPlanner.UI
 
 		private ScheduleBlock? GetSelectedScheduleBlock()
 		{
-			return dgvSchedule.CurrentRow?.DataBoundItem as ScheduleBlock;
+			if (dgvSchedule.CurrentRow == null)
+			{
+				return null;
+			}
+
+			int id = (int)dgvSchedule.CurrentRow.Cells["Id"].Value;
+
+			return _scheduleBlocks.GetAll().FirstOrDefault(b => b.Id == id);
 		}
 
 		private void btnToggleLock_Click(object sender, EventArgs e)
@@ -692,6 +726,36 @@ namespace StudentPlanner.UI
 
 			// Reload the grid so the user immediately sees the updated flag
 			RefreshScheduleGrid();
+		}
+
+		private void dgvSchedule_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
+		{
+			// Ignore invalid row indexes
+			if (e.RowIndex < 0)
+			{
+				return;
+			}
+
+			var row = dgvSchedule.Rows[e.RowIndex];
+
+			// Safely read the two boolean flags from the bound row
+			bool isCompleted = row.Cells["IsCompleted"].Value != null && Convert.ToBoolean(row.Cells["IsCompleted"].Value);
+
+			bool isLocked = row.Cells["IsLocked"].Value != null && Convert.ToBoolean(row.Cells["IsLocked"].Value);
+
+			// Reset row style first so colors do not "stick" incorrectly
+			row.DefaultCellStyle.BackColor = Color.White;
+			row.DefaultCellStyle.ForeColor = Color.Black;
+
+			// Completed blocks take priority visually over locked ones
+			if (isCompleted)
+			{
+				row.DefaultCellStyle.BackColor = Color.LightGreen;
+			}
+			else if (isLocked)
+			{
+				row.DefaultCellStyle.BackColor = Color.LightYellow;
+			}
 		}
 	}
 }

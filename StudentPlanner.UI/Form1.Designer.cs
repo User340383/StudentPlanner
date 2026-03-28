@@ -474,6 +474,7 @@
 			dgvSchedule.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
 			dgvSchedule.Size = new Size(786, 247);
 			dgvSchedule.TabIndex = 2;
+			dgvSchedule.CellFormatting += dgvSchedule_CellFormatting;
 			// 
 			// Form1
 			// 
