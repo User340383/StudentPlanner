@@ -62,6 +62,10 @@
 			btnRegenerateSchedule = new Button();
 			lstWarnings = new ListBox();
 			dgvSchedule = new DataGridView();
+			tabPageReports = new TabPage();
+			btnExportReport = new Button();
+			btnGenerateReport = new Button();
+			rtbReport = new RichTextBox();
 			tabControl1.SuspendLayout();
 			tabPageCourses.SuspendLayout();
 			tableLayoutPanel1.SuspendLayout();
@@ -80,6 +84,7 @@
 			tlpSchedule.SuspendLayout();
 			pnlScheduleTop.SuspendLayout();
 			((System.ComponentModel.ISupportInitialize)dgvSchedule).BeginInit();
+			tabPageReports.SuspendLayout();
 			SuspendLayout();
 			// 
 			// tabControl1
@@ -88,6 +93,7 @@
 			tabControl1.Controls.Add(tabPageTasks);
 			tabControl1.Controls.Add(tabPageAvailability);
 			tabControl1.Controls.Add(tabPageSchedule);
+			tabControl1.Controls.Add(tabPageReports);
 			tabControl1.Dock = DockStyle.Fill;
 			tabControl1.Location = new Point(0, 0);
 			tabControl1.Name = "tabControl1";
@@ -325,7 +331,7 @@
 			btnDeleteAvailability.Name = "btnDeleteAvailability";
 			btnDeleteAvailability.Size = new Size(156, 30);
 			btnDeleteAvailability.TabIndex = 3;
-			btnDeleteAvailability.Text = "Delete Availability";
+			btnDeleteAvailability.Text = "Delete availability";
 			btnDeleteAvailability.UseVisualStyleBackColor = true;
 			btnDeleteAvailability.Click += btnDeleteAvailability_Click;
 			// 
@@ -417,7 +423,7 @@
 			btnToggleComplete.Name = "btnToggleComplete";
 			btnToggleComplete.Size = new Size(132, 29);
 			btnToggleComplete.TabIndex = 3;
-			btnToggleComplete.Text = "Toggle Complete";
+			btnToggleComplete.Text = "Toggle complete";
 			btnToggleComplete.UseVisualStyleBackColor = true;
 			btnToggleComplete.Click += btnToggleComplete_Click;
 			// 
@@ -427,7 +433,7 @@
 			btnToggleLock.Name = "btnToggleLock";
 			btnToggleLock.Size = new Size(132, 29);
 			btnToggleLock.TabIndex = 2;
-			btnToggleLock.Text = "Toggle Lock";
+			btnToggleLock.Text = "Toggle lock";
 			btnToggleLock.UseVisualStyleBackColor = true;
 			btnToggleLock.Click += btnToggleLock_Click;
 			// 
@@ -476,6 +482,48 @@
 			dgvSchedule.TabIndex = 2;
 			dgvSchedule.CellFormatting += dgvSchedule_CellFormatting;
 			// 
+			// tabPageReports
+			// 
+			tabPageReports.Controls.Add(btnExportReport);
+			tabPageReports.Controls.Add(btnGenerateReport);
+			tabPageReports.Controls.Add(rtbReport);
+			tabPageReports.Location = new Point(4, 29);
+			tabPageReports.Name = "tabPageReports";
+			tabPageReports.Padding = new Padding(3);
+			tabPageReports.Size = new Size(792, 417);
+			tabPageReports.TabIndex = 4;
+			tabPageReports.Text = "Reports";
+			tabPageReports.UseVisualStyleBackColor = true;
+			// 
+			// btnExportReport
+			// 
+			btnExportReport.Location = new Point(414, 350);
+			btnExportReport.Name = "btnExportReport";
+			btnExportReport.Size = new Size(164, 29);
+			btnExportReport.TabIndex = 2;
+			btnExportReport.Text = "Export report";
+			btnExportReport.UseVisualStyleBackColor = true;
+			btnExportReport.Click += btnExportReport_Click;
+			// 
+			// btnGenerateReport
+			// 
+			btnGenerateReport.Location = new Point(216, 350);
+			btnGenerateReport.Name = "btnGenerateReport";
+			btnGenerateReport.Size = new Size(164, 29);
+			btnGenerateReport.TabIndex = 1;
+			btnGenerateReport.Text = "Generate report";
+			btnGenerateReport.UseVisualStyleBackColor = true;
+			btnGenerateReport.Click += btnGenerateReport_Click;
+			// 
+			// rtbReport
+			// 
+			rtbReport.Location = new Point(39, 39);
+			rtbReport.Name = "rtbReport";
+			rtbReport.ReadOnly = true;
+			rtbReport.Size = new Size(710, 268);
+			rtbReport.TabIndex = 0;
+			rtbReport.Text = "";
+			// 
 			// Form1
 			// 
 			AutoScaleDimensions = new SizeF(8F, 20F);
@@ -507,6 +555,7 @@
 			pnlScheduleTop.ResumeLayout(false);
 			pnlScheduleTop.PerformLayout();
 			((System.ComponentModel.ISupportInitialize)dgvSchedule).EndInit();
+			tabPageReports.ResumeLayout(false);
 			ResumeLayout(false);
 		}
 
@@ -546,5 +595,9 @@
 		private TableLayoutPanel tableLayoutPanel2;
 		private Button btnToggleComplete;
 		private Button btnToggleLock;
+		private TabPage tabPageReports;
+		private Button btnExportReport;
+		private Button btnGenerateReport;
+		private RichTextBox rtbReport;
 	}
 }

@@ -1,6 +1,7 @@
 using StudentPlanner.Core; // Domain models + interfaces (contracts)
 using StudentPlanner.Data; // Concrete repository implementations (SQLite persistence)
 using System.Drawing;
+using System.Text;
 
 namespace StudentPlanner.UI
 {
@@ -457,6 +458,11 @@ namespace StudentPlanner.UI
 			dgvTasks.DataSource = null;
 			dgvTasks.DataSource = tasks;
 
+			if (dgvTasks.Columns["IsCompleted"] != null)
+			{
+				dgvTasks.Columns["IsCompleted"].Visible = false;
+			}
+
 			// Hide internal DB keys (optional).
 			if (dgvTasks.Columns.Contains("Id"))
 			{
@@ -682,12 +688,24 @@ namespace StudentPlanner.UI
 
 		private ScheduleBlock? GetSelectedScheduleBlock()
 		{
-			if (dgvSchedule.CurrentRow == null)
-			{
+			if (dgvSchedule.SelectedRows.Count == 0)
 				return null;
-			}
 
-			int id = (int)dgvSchedule.CurrentRow.Cells["Id"].Value;
+			DataGridViewRow row = dgvSchedule.SelectedRows[0];
+
+			if (row.IsNewRow)
+				return null;
+
+			if (!dgvSchedule.Columns.Contains("Id"))
+				return null;
+
+			object value = row.Cells["Id"].Value;
+
+			if (value == null || value == DBNull.Value)
+				return null;
+
+			if (!int.TryParse(value.ToString(), out int id))
+				return null;
 
 			return _scheduleBlocks.GetAll().FirstOrDefault(b => b.Id == id);
 		}
@@ -755,6 +773,105 @@ namespace StudentPlanner.UI
 			else if (isLocked)
 			{
 				row.DefaultCellStyle.BackColor = Color.LightYellow;
+			}
+		}
+
+		private string BuildReport()
+		{
+			var courses = _courses.GetAll();
+			var tasks = _tasks.GetAll();
+			var scheduleBlocks = _scheduleBlocks.GetAll();
+
+			int totalCourses = courses.Count;
+			int totalTasks = tasks.Count;
+			int completedTasks = tasks.Count(t => t.IsCompleted);
+			int incompleteTasks = tasks.Count(t => !t.IsCompleted);
+			int overdueTasks = tasks.Count(t =>
+			{
+				var blocksForTask = scheduleBlocks.Where(b => b.TaskId == t.Id).ToList();
+
+				return t.Deadline.Date < DateTime.Today &&
+					   (blocksForTask.Count == 0 || blocksForTask.Any(b => !b.IsCompleted));
+			});
+			int tasksDueSoon = tasks.Count(t =>
+			{
+				var blocksForTask = scheduleBlocks.Where(b => b.TaskId == t.Id).ToList();
+
+				return t.Deadline.Date >= DateTime.Today &&
+					   t.Deadline.Date <= DateTime.Today.AddDays(7) &&
+					   (blocksForTask.Count == 0 || blocksForTask.Any(b => !b.IsCompleted));
+			});
+
+			int totalBlocks = scheduleBlocks.Count;
+			int completedBlocks = scheduleBlocks.Count(b => b.IsCompleted);
+			int lockedBlocks = scheduleBlocks.Count(b => b.IsLocked);
+
+			double totalScheduledHours = scheduleBlocks.Sum(b => (b.End - b.Start).TotalHours);
+
+			var upcomingTasks = tasks
+				.Where(t =>
+				{
+					var blocksForTask = scheduleBlocks.Where(b => b.TaskId == t.Id).ToList();
+
+					return t.Deadline.Date >= DateTime.Today &&
+						(blocksForTask.Count == 0 || blocksForTask.Any(b => !b.IsCompleted));
+				})
+				.OrderBy(t => t.Deadline)
+				.Take(5)
+				.ToList();
+
+			var sb = new StringBuilder();
+
+			sb.AppendLine("STUDENT PLANNER REPORT");
+			sb.AppendLine("======================");
+			sb.AppendLine();
+			sb.AppendLine($"Courses: {totalCourses}");
+			sb.AppendLine($"Tasks: {totalTasks}");
+			//sb.AppendLine($"Completed Tasks: {completedTasks}");
+			//sb.AppendLine($"Incomplete Tasks: {incompleteTasks}");
+			sb.AppendLine($"Overdue Tasks: {overdueTasks}");
+			sb.AppendLine($"Tasks Due in Next 7 Days: {tasksDueSoon}");
+			sb.AppendLine();
+			sb.AppendLine($"Schedule Blocks: {totalBlocks}");
+			sb.AppendLine($"Completed Schedule Blocks: {completedBlocks}");
+			sb.AppendLine($"Locked Schedule Blocks: {lockedBlocks}");
+			sb.AppendLine($"Total Scheduled Hours: {totalScheduledHours:F2}");
+			sb.AppendLine();
+			sb.AppendLine("Upcoming Deadlines:");
+
+			if (upcomingTasks.Count == 0)
+			{
+				sb.AppendLine("- None");
+			}
+			else
+			{
+				foreach (var task in upcomingTasks)
+				{
+					sb.AppendLine($"- {task.Title} - {task.Deadline:yyyy-MM-dd}");
+				}
+			}
+
+			return sb.ToString();
+		}
+
+		private void btnGenerateReport_Click(object sender, EventArgs e)
+		{
+			rtbReport.Text = BuildReport();
+		}
+
+		private void btnExportReport_Click(object sender, EventArgs e)
+		{
+			string report = BuildReport();
+
+			using SaveFileDialog saveDialog = new SaveFileDialog();
+			saveDialog.Filter = "Text Files (*.txt)|*.txt|All Files (*.*)|*.*";
+			saveDialog.Title = "Export Report";
+			saveDialog.FileName = "StudentPlannerReport.txt";
+
+			if (saveDialog.ShowDialog() == DialogResult.OK)
+			{
+				File.WriteAllText(saveDialog.FileName, report);
+				MessageBox.Show("Report exported successfully.");
 			}
 		}
 	}
