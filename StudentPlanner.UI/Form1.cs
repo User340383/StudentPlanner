@@ -488,6 +488,8 @@ namespace StudentPlanner.UI
 			dgvAvailability.DataSource = null;
 			dgvAvailability.DataSource = blocks;
 
+			dgvAvailability.Columns["Day"].HeaderText = "Day (availability)";
+
 			if (dgvAvailability.Columns.Contains("Id"))
 			{
 				dgvAvailability.Columns["Id"].Visible = false;
@@ -506,6 +508,8 @@ namespace StudentPlanner.UI
 
 			dgvCommitments.DataSource = null;
 			dgvCommitments.DataSource = items;
+
+			dgvCommitments.Columns["Day"].HeaderText = "Day (commitments)";
 
 			if (dgvCommitments.Columns.Contains("Id"))
 			{
@@ -599,31 +603,6 @@ namespace StudentPlanner.UI
 			btnEditTask.PerformClick();
 		}
 
-		private void ShowSchedule(ScheduleResult result)
-		{
-			// --- Schedule grid ---
-			dgvSchedule.DataSource = null;
-
-			// For now, bind the raw blocks list directly.
-			// (Later we can join TaskId -> Task Title to display titles instead of IDs.)
-			dgvSchedule.AutoGenerateColumns = true;
-			dgvSchedule.DataSource = result.ScheduleBlocks;
-
-			dgvSchedule.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
-			dgvSchedule.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-			dgvSchedule.MultiSelect = false;
-			dgvSchedule.ReadOnly = true;
-			dgvSchedule.AllowUserToAddRows = false;
-
-			// --- Warnings list ---
-			lstWarnings.Items.Clear();
-			foreach (var w in result.Warnings)
-				lstWarnings.Items.Add(w);
-
-			// Keep the latest schedule for "Regenerate"
-			_lastSchedule = result;
-		}
-
 		private void RefreshScheduleGrid()
 		{
 			var blocks = _scheduleBlocks.GetAll();
@@ -689,43 +668,55 @@ namespace StudentPlanner.UI
 		private ScheduleBlock? GetSelectedScheduleBlock()
 		{
 			if (dgvSchedule.SelectedRows.Count == 0)
+			{
 				return null;
+			}
 
 			DataGridViewRow row = dgvSchedule.SelectedRows[0];
 
-			if (row.IsNewRow)
+			if (row == null || row.IsNewRow)
+			{
 				return null;
+			}
 
 			if (!dgvSchedule.Columns.Contains("Id"))
+			{
 				return null;
+			}
 
 			object value = row.Cells["Id"].Value;
 
 			if (value == null || value == DBNull.Value)
+			{
 				return null;
+			}
 
 			if (!int.TryParse(value.ToString(), out int id))
+			{
 				return null;
+			}
 
 			return _scheduleBlocks.GetAll().FirstOrDefault(b => b.Id == id);
 		}
 
 		private void btnToggleLock_Click(object sender, EventArgs e)
 		{
-			var selected = GetSelectedScheduleBlock();
-			if (selected == null)
+			try
 			{
-				MessageBox.Show("Select a schedule block first.");
-				return;
+				var selected = GetSelectedScheduleBlock();
+				if (selected == null)
+				{
+					MessageBox.Show("Select a schedule block first.");
+					return;
+				}
+
+				_scheduleBlocks.SetLocked(selected.Id, !selected.IsLocked);
+				RefreshScheduleGrid();
 			}
-
-			// Toggle the current lock state
-			bool newLockedState = !selected.IsLocked;
-
-			_scheduleBlocks.SetLocked(selected.Id, newLockedState);
-
-			// Reload the grid so the user immediately sees the updated flag
-			RefreshScheduleGrid();
+			catch (Exception ex)
+			{
+				MessageBox.Show(ex.ToString());
+			}
 		}
 
 		private void btnToggleComplete_Click(object sender, EventArgs e)
@@ -737,12 +728,7 @@ namespace StudentPlanner.UI
 				return;
 			}
 
-			// Toggle the current completion state
-			bool newCompletedState = !selected.IsCompleted;
-
-			_scheduleBlocks.SetCompleted(selected.Id, newCompletedState);
-
-			// Reload the grid so the user immediately sees the updated flag
+			_scheduleBlocks.SetCompleted(selected.Id, !selected.IsCompleted);
 			RefreshScheduleGrid();
 		}
 

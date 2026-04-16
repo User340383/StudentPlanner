@@ -28,19 +28,19 @@ namespace StudentPlanner.Core
 				return result;
 			}
 
-			// Choose the target week: current week starting Monday
-			DateTime weekStart = GetStartOfWeek(DateTime.Today, DayOfWeek.Monday);
-			DateTime weekEnd = weekStart.AddDays(7);
+			// Look ahead into the future instead of only using the current calendar week
+			DateTime startFrom = DateTime.Now;
+			int daysToLookAhead = 14;
 
-			// Only schedule tasks that are not completed and relevant (deadline not already far past)
+			// Only schedule tasks that are not completed
 			var tasks = input.Tasks
 				.Where(t => !t.IsCompleted)
-				.OrderBy(t => t.Deadline)          // earliest deadline first
-				.ThenByDescending(t => t.Priority) // higher priority first
+				.OrderBy(t => t.Deadline)
+				.ThenByDescending(t => t.Priority)
 				.ToList();
 
-			// Build free slots for the week (availability minus commitments)
-			var freeSlots = BuildFreeSlotsForWeek(weekStart, input.Availability, input.Commitments);
+			// Build free slots for the next N days
+			var freeSlots = BuildFreeSlots(startFrom, daysToLookAhead, input.Availability, input.Commitments);
 
 			// Convert free slots into a cursor that we fill with blocks
 			foreach (var task in tasks)
@@ -122,29 +122,37 @@ namespace StudentPlanner.Core
 
 		// --------- helpers ---------
 
-		private static DateTime GetStartOfWeek(DateTime date, DayOfWeek startDay)
-		{
-			int diff = (7 + (date.DayOfWeek - startDay)) % 7;
-			return date.Date.AddDays(-diff);
-		}
-
-		private static List<TimeSlot> BuildFreeSlotsForWeek(
-			DateTime weekStart,
-			List<Availability> availability,
-			List<Commitment> commitments)
+		private static List<TimeSlot> BuildFreeSlots(DateTime startFrom,int daysToLookAhead,List<Availability> availability, List<Commitment> commitments)
 		{
 			var slots = new List<TimeSlot>();
 
-			// Step 1: add availability windows for each day in the target week
-			for (int i = 0; i < 7; i++)
+			// Step 1: add availability windows for each of the next N days
+			for (int i = 0; i < daysToLookAhead; i++)
 			{
-				DateTime day = weekStart.AddDays(i);
+				DateTime day = startFrom.Date.AddDays(i);
 				var dayAvail = availability.Where(a => a.Day == day.DayOfWeek);
 
 				foreach (var a in dayAvail)
 				{
 					DateTime start = day.Date + a.Start;
 					DateTime end = day.Date + a.End;
+
+					// Skip invalid ranges
+					if (end <= start)
+					{
+						continue;
+					}
+
+					// Trim away past time on the first day
+					if (end <= startFrom)
+					{
+						continue;
+					}
+
+					if (start < startFrom)
+					{
+						start = startFrom;
+					}
 
 					if (end > start)
 					{
@@ -154,17 +162,16 @@ namespace StudentPlanner.Core
 			}
 
 			// Step 2: subtract commitments from those slots
-			// We'll do it day-by-day for simplicity.
-			for (int i = 0; i < 7; i++)
+			for (int i = 0; i < daysToLookAhead; i++)
 			{
-				DateTime day = weekStart.AddDays(i);
+				DateTime day = startFrom.Date.AddDays(i);
 				var dayCommit = commitments.Where(c => c.Day == day.DayOfWeek).ToList();
+
 				if (dayCommit.Count == 0)
 				{
 					continue;
 				}
 
-				// For each commitment, split any overlapping slots
 				foreach (var c in dayCommit)
 				{
 					DateTime cStart = day.Date + c.Start;
@@ -173,7 +180,7 @@ namespace StudentPlanner.Core
 					slots = SubtractWindow(slots, cStart, cEnd);
 				}
 			}
-			// Final tidy: order by time
+
 			return slots.OrderBy(s => s.Start).ToList();
 		}
 

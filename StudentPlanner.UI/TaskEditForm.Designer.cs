@@ -113,9 +113,11 @@ namespace StudentPlanner.UI
 			nudHours.Increment = new decimal(new int[] { 5, 0, 0, 65536 });
 			nudHours.Location = new Point(135, 169);
 			nudHours.Maximum = new decimal(new int[] { 1000, 0, 0, 0 });
+			nudHours.Minimum = new decimal(new int[] { 5, 0, 0, 65536 });
 			nudHours.Name = "nudHours";
 			nudHours.Size = new Size(99, 27);
 			nudHours.TabIndex = 7;
+			nudHours.Value = new decimal(new int[] { 5, 0, 0, 65536 });
 			// 
 			// label5
 			// 
