@@ -1,6 +1,5 @@
 using StudentPlanner.Core; // Domain models + interfaces (contracts)
 using StudentPlanner.Data; // Concrete repository implementations (SQLite persistence)
-using System.Drawing;
 using System.Text;
 
 namespace StudentPlanner.UI
@@ -458,6 +457,10 @@ namespace StudentPlanner.UI
 			dgvTasks.DataSource = null;
 			dgvTasks.DataSource = tasks;
 
+			dgvTasks.Columns["Title"].HeaderText = "Task";
+			dgvTasks.Columns["Deadline"].HeaderText = "Due Date";
+			dgvTasks.Columns["EstimatedHours"].HeaderText = "Hours";
+
 			if (dgvTasks.Columns["IsCompleted"] != null)
 			{
 				dgvTasks.Columns["IsCompleted"].Visible = false;
@@ -489,6 +492,8 @@ namespace StudentPlanner.UI
 			dgvAvailability.DataSource = blocks;
 
 			dgvAvailability.Columns["Day"].HeaderText = "Day (availability)";
+			dgvAvailability.Columns["Start"].HeaderText = "Start Time";
+			dgvAvailability.Columns["End"].HeaderText = "End Time";
 
 			if (dgvAvailability.Columns.Contains("Id"))
 			{
@@ -510,6 +515,8 @@ namespace StudentPlanner.UI
 			dgvCommitments.DataSource = items;
 
 			dgvCommitments.Columns["Day"].HeaderText = "Day (commitments)";
+			dgvCommitments.Columns["Start"].HeaderText = "Start Time";
+			dgvCommitments.Columns["End"].HeaderText = "End Time";
 
 			if (dgvCommitments.Columns.Contains("Id"))
 			{

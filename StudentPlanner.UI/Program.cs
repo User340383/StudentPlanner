@@ -1,5 +1,3 @@
-using System;
-using System.Windows.Forms;
 using StudentPlanner.Core;
 using StudentPlanner.Data;
 

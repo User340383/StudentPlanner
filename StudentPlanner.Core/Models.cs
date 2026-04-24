@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace StudentPlanner.Core
+﻿namespace StudentPlanner.Core
 {
 	// Represents an academic course.
 	// A Course is the parent entity for TaskItem.

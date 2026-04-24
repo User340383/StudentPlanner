@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace StudentPlanner.Core
+﻿namespace StudentPlanner.Core
 {
 	// Persistence contract for TaskItem entities.
 	// Implementations (e.g., SQLite) live in the Data layer; UI depends only on this abstraction.

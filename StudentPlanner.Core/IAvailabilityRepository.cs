@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace StudentPlanner.Core
+﻿namespace StudentPlanner.Core
 {
 	// Persistence contract for weekly availability windows.
 	// Availability defines when the student is allowed to schedule study blocks.

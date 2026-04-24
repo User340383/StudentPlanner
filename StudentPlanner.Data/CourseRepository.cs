@@ -1,7 +1,5 @@
 ﻿using Microsoft.Data.Sqlite;
 using StudentPlanner.Core;
-using System;
-using System.Collections.Generic;
 
 namespace StudentPlanner.Data
 {

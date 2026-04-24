@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace StudentPlanner.Core
+﻿namespace StudentPlanner.Core
 {
 	// Persistence contract for fixed weekly commitments (e.g., work shifts, meetings).
 	// Commitments will be used later by the scheduler to block out unavailable time.

@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace StudentPlanner.Core
+﻿namespace StudentPlanner.Core
 {
 	// Persistence contract for Course entities.
 	// Courses are the parent entity of tasks (Tasks.CourseId FK).

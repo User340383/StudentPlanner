@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-
-namespace StudentPlanner.Core
+﻿namespace StudentPlanner.Core
 {
 	// Simple week scheduler:
 	// - Builds free time from availability minus commitments

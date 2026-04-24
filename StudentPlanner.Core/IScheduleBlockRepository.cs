@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace StudentPlanner.Core
+﻿namespace StudentPlanner.Core
 {
 	// Persistence contract for generated schedule blocks.
 	// Schedule blocks are the stored output of the scheduling algorithm.
